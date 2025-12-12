@@ -1,0 +1,7 @@
+$schema: 'https://moonrepo.dev/schemas/project.json'
+
+layer: 'application'
+
+tasks:
+  run:
+    command: 'cargo run --release'
