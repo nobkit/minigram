@@ -5,3 +5,5 @@ layer: 'application'
 tasks:
   run:
     command: 'cargo run --release'
+    options:
+      cache: false
