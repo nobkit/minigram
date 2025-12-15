@@ -1300,6 +1300,7 @@ dependencies = [
  "defmt 1.0.1",
  "embassy-embedded-hal",
  "embassy-executor",
+ "embassy-futures",
  "embassy-net",
  "embassy-sync 0.7.2",
  "embassy-time",
