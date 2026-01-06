@@ -16,6 +16,8 @@ use esp_hal::gpio::{AnyPin, Input, InputConfig, Pull};
 pub static LEFT_BUTTON_CHANNEL: Channel<CriticalSectionRawMutex, ButtonEvent, 10> = Channel::new();
 pub static RIGHT_BUTTON_CHANNEL: Channel<CriticalSectionRawMutex, ButtonEvent, 10> = Channel::new();
 
+pub static INPUT_CHANNEL: Channel<CriticalSectionRawMutex, InputEvent, 10> = Channel::new();
+
 pub enum ButtonId {
     Left = -1,
     Right = 1,
@@ -71,7 +73,7 @@ pub async fn handle_button(
 }
 
 #[derive(Clone, Copy, PartialEq, defmt::Format)]
-enum InputEvent {
+pub enum InputEvent {
     Left(ButtonEvent),
     Right(ButtonEvent),
     Both(ButtonEvent),
@@ -98,18 +100,27 @@ pub async fn handle_gestures() {
             .await
         {
             Ok(be) if be == button_event => {
+                INPUT_CHANNEL.send(InputEvent::Both(button_event)).await;
                 info!("{}", InputEvent::Both(button_event));
             }
             result => match button_id {
                 ButtonId::Left => {
+                    INPUT_CHANNEL.send(InputEvent::Left(button_event)).await;
                     info!("{}", InputEvent::Left(button_event));
                     if let Some(other_button_event) = result.ok() {
+                        INPUT_CHANNEL
+                            .send(InputEvent::Right(other_button_event))
+                            .await;
                         info!("{}", InputEvent::Right(other_button_event));
                     }
                 }
                 ButtonId::Right => {
+                    INPUT_CHANNEL.send(InputEvent::Right(button_event)).await;
                     info!("{}", InputEvent::Right(button_event));
                     if let Some(other_button_event) = result.ok() {
+                        INPUT_CHANNEL
+                            .send(InputEvent::Left(other_button_event))
+                            .await;
                         info!("{}", InputEvent::Left(other_button_event));
                     }
                 }

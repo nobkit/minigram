@@ -7,32 +7,35 @@
 )]
 
 use defmt::info;
-use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
-use embedded_graphics::{
-    mono_font::MonoTextStyleBuilder,
-    mono_font::ascii::*,
-    pixelcolor::BinaryColor,
-    prelude::*,
-    text::{Baseline, Text},
-};
+
 use esp_hal::{
     clock::CpuClock,
-    gpio::Pin,
+    delay::Delay,
+    gpio::{Input, Output, Pin},
     i2c::{self, master::I2c},
     time::Rate,
     timer::timg::TimerGroup,
 };
-use minigram_1::input::{
-    LEFT_BUTTON_CHANNEL, RIGHT_BUTTON_CHANNEL, handle_button, handle_gestures,
+use loadcell::hx711::HX711;
+use minigram_1::{
+    display::initialize_displays,
+    input::{LEFT_BUTTON_CHANNEL, RIGHT_BUTTON_CHANNEL, handle_button, handle_gestures},
+    load_cell::load_cell,
+    routes::{ROUTE, RouteName, main_menu::main_menu_route, scale::scale_route},
 };
 use panic_rtt_target as _;
-use ssd1306::{I2CDisplayInterface, Ssd1306Async, prelude::*};
+use static_cell::StaticCell;
 
 extern crate alloc;
 
 esp_bootloader_esp_idf::esp_app_desc!();
+
+static I2C_BUS: StaticCell<Mutex<NoopRawMutex, I2c<esp_hal::Async>>> = StaticCell::new();
+
+static LOAD_CELL: StaticCell<Mutex<NoopRawMutex, HX711<Output<'static>, Input<'static>, Delay>>> =
+    StaticCell::new();
 
 #[esp_rtos::main]
 async fn main(spawner: Spawner) {
@@ -47,8 +50,7 @@ async fn main(spawner: Spawner) {
     esp_rtos::start(timg0.timer0, sw_interrupt.software_interrupt0);
 
     info!("Embassy initialized!");
-
-    let i2c = I2c::new(
+    let i2c: I2c<'_, esp_hal::Async> = I2c::new(
         peripherals.I2C0,
         i2c::master::Config::default().with_frequency(Rate::from_khz(400)),
     )
@@ -57,38 +59,9 @@ async fn main(spawner: Spawner) {
     .with_scl(peripherals.GPIO7)
     .into_async();
 
-    let bus = Mutex::<NoopRawMutex, _>::new(i2c);
-    let dev1 = I2cDevice::new(&bus);
-    let dev2 = I2cDevice::new(&bus);
+    let i2c_bus = I2C_BUS.init(Mutex::new(i2c));
 
-    let interface = I2CDisplayInterface::new_custom_address(dev1, 0x3C);
-
-    let interface2 = I2CDisplayInterface::new_custom_address(dev2, 0x3D);
-
-    let mut display = Ssd1306Async::new(interface, DisplaySize128x64, DisplayRotation::Rotate180)
-        .into_buffered_graphics_mode();
-
-    display.init().await.unwrap();
-
-    let mut display2 = Ssd1306Async::new(interface2, DisplaySize128x64, DisplayRotation::Rotate180)
-        .into_buffered_graphics_mode();
-    display2.init().await.unwrap();
-
-    let text_style = MonoTextStyleBuilder::new()
-        .font(&FONT_6X10)
-        .text_color(BinaryColor::On)
-        .build();
-
-    Text::with_baseline("Screen One", Point::new(0, 16), text_style, Baseline::Top)
-        .draw(&mut display)
-        .unwrap();
-
-    Text::with_baseline("Screen Two", Point::new(0, 16), text_style, Baseline::Top)
-        .draw(&mut display2)
-        .unwrap();
-
-    display.flush().await.unwrap();
-    display2.flush().await.unwrap();
+    let (display_left, display_right) = initialize_displays(i2c_bus).await;
 
     spawner
         .spawn(handle_button(
@@ -104,4 +77,16 @@ async fn main(spawner: Spawner) {
         .unwrap();
 
     spawner.spawn(handle_gestures()).unwrap();
+
+    ROUTE.sender().send(RouteName::MainMenu);
+
+    spawner.spawn(main_menu_route()).unwrap();
+    spawner.spawn(scale_route()).unwrap();
+
+    spawner
+        .spawn(load_cell(
+            peripherals.GPIO10.degrade(),
+            peripherals.GPIO9.degrade(),
+        ))
+        .unwrap();
 }

@@ -1246,6 +1246,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092"
 
 [[package]]
+name = "loadcell"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a28f12fbad9a1fbc006aa4c1d11865f5e213e311b85735e21cf7ea4dea8f8e30"
+dependencies = [
+ "critical-section",
+ "embedded-hal 1.0.0",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1313,6 +1323,7 @@ dependencies = [
  "esp-hal",
  "esp-radio",
  "esp-rtos",
+ "loadcell",
  "panic-rtt-target",
  "rtt-target",
  "smoltcp",

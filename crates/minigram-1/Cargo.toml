@@ -76,7 +76,8 @@ trouble-host = { version = "0.5.0", features = ["gatt"] }
 embedded-graphics = "0.8.1"
 ssd1306 = { version = "0.10.0", features = ["async", "graphics"] }
 critical-section = "1.2.0"
-static_cell = "2.1.1"
+static_cell = { version = "2.1.1", features = ["nightly"] }
+loadcell = "0.3.0"
 
 [dev-dependencies]
 embedded-test = { version = "0.7.0", features = [
