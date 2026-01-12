@@ -5,3 +5,4 @@ pub mod display;
 pub mod input;
 pub mod load_cell;
 pub mod routes;
+pub mod storage;

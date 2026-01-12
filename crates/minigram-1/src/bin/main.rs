@@ -18,12 +18,14 @@ use esp_hal::{
     time::Rate,
     timer::timg::TimerGroup,
 };
+use esp_storage::FlashStorage;
 use loadcell::hx711::HX711;
 use minigram_1::{
     display::initialize_displays,
     input::{LEFT_BUTTON_CHANNEL, RIGHT_BUTTON_CHANNEL, handle_button, handle_gestures},
     load_cell::load_cell,
     routes::{ROUTE, RouteName, main_menu::main_menu_route, scale::scale_route},
+    storage::init_storage,
 };
 use panic_rtt_target as _;
 use static_cell::StaticCell;
@@ -50,6 +52,9 @@ async fn main(spawner: Spawner) {
     esp_rtos::start(timg0.timer0, sw_interrupt.software_interrupt0);
 
     info!("Embassy initialized!");
+
+    init_storage(FlashStorage::new(peripherals.FLASH));
+
     let i2c: I2c<'_, esp_hal::Async> = I2c::new(
         peripherals.I2C0,
         i2c::master::Config::default().with_frequency(Rate::from_khz(400)),
@@ -61,7 +66,7 @@ async fn main(spawner: Spawner) {
 
     let i2c_bus = I2C_BUS.init(Mutex::new(i2c));
 
-    let (display_left, display_right) = initialize_displays(i2c_bus).await;
+    let (_display_left, _display_right) = initialize_displays(i2c_bus).await;
 
     spawner
         .spawn(handle_button(

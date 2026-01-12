@@ -1,8 +1,7 @@
 use defmt::info;
-use embassy_futures::select::select;
 use embassy_sync::{
     blocking_mutex::raw::{CriticalSectionRawMutex, NoopRawMutex},
-    channel::{Channel, Receiver, TryReceiveError},
+    channel::{Channel, TryReceiveError},
     mutex::Mutex,
     signal::Signal,
     watch::Watch,
@@ -15,10 +14,7 @@ use esp_hal::{
 use loadcell::{LoadCell, hx711::HX711};
 use static_cell::StaticCell;
 
-use crate::{
-    input::{ButtonEvent, InputEvent},
-    routes::{RouteName, run_on_route},
-};
+use crate::storage::{STORE, StoreKey};
 
 pub static WEIGHT: Signal<CriticalSectionRawMutex, f64> = Signal::new();
 
@@ -47,7 +43,16 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
 
     load_sensor.tare(32);
 
-    load_sensor.set_scale(1.0);
+    let mut data_buffer = [0u8; 64];
+    let mut store = STORE.get().await.lock().await;
+    if let Ok(Some(factor)) = store
+        .fetch_item::<f32>(&mut data_buffer, &StoreKey::ScaleCalibrationFactor)
+        .await
+    {
+        info!("Scale calibration loaded from flash: {}", &factor);
+        load_sensor.set_scale(factor);
+    }
+    drop(store);
 
     let load_sensor_mutex = LOAD_CELL.init(Mutex::new(load_sensor));
 
@@ -62,9 +67,22 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
                 }
                 Ok(LoadCellCommand::Calibrate) => {
                     let mut load = load_sensor_mutex.lock().await;
+                    let mut store = STORE.get().await.lock().await;
                     if let Ok(weight) = load.read_scaled() {
                         WEIGHT.signal(weight as f64);
-                        load.set_scale(100000.0 / weight);
+                        let scale = 100000.0 / weight;
+                        match store
+                            .store_item(&mut data_buffer, &StoreKey::ScaleCalibrationFactor, &scale)
+                            .await
+                        {
+                            Ok(_) => {
+                                info!("Calibration stored into flash: {}", &scale);
+                            }
+                            Err(e) => {
+                                info!("Error storing calibration into flash: {}", &e)
+                            }
+                        }
+                        load.set_scale(scale);
                     }
                 }
                 Err(TryReceiveError::Empty) => {

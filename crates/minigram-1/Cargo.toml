@@ -39,6 +39,8 @@ embassy-net = { version = "0.7.1", features = [
 ] }
 embedded-io = { version = "0.7.1", features = ["defmt"] }
 embedded-io-async = { version = "0.7.0", features = ["defmt"] }
+embedded-storage = { version = "0.3.1" }
+sequential-storage = { version = "7.0.1", features = ["defmt"] }
 esp-alloc = { version = "0.9.0", features = ["defmt"] }
 panic-rtt-target = { version = "0.2.0", features = ["defmt"] }
 rtt-target = { version = "0.6.2", features = ["defmt"] }
@@ -78,6 +80,7 @@ ssd1306 = { version = "0.10.0", features = ["async", "graphics"] }
 critical-section = "1.2.0"
 static_cell = { version = "2.1.1", features = ["nightly"] }
 loadcell = "0.3.0"
+esp-storage = { version = "0.8.1", features = ["esp32c3", "defmt"] }
 
 [dev-dependencies]
 embedded-test = { version = "0.7.0", features = [
@@ -90,6 +93,9 @@ embedded-test = { version = "0.7.0", features = [
 # Rust debug is too slow.
 # For debug builds always builds with some optimization
 opt-level = "s"
+
+[profile.dev.package.esp-storage]
+opt-level = 3
 
 [profile.release]
 codegen-units = 1        # LLVM can perform better optimizations using a single thread

@@ -1,10 +1,9 @@
 use core::{
     cell::Cell,
-    future::{self, pending},
+    future::{self},
 };
 use embassy_futures::select::select;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, watch::Watch};
-use embassy_time::Timer;
 use static_cell::StaticCell;
 
 use crate::input::{INPUT_CHANNEL, InputEvent};
