@@ -1,0 +1,25 @@
+[package]
+name = "miniroute"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85.0"
+license = "MIT OR Apache-2.0"
+description = "Lightweight async routing for Embassy-based embedded applications"
+repository = "https://github.com/user/miniroute"
+readme = "README.md"
+keywords = ["embedded", "embassy", "routing", "async", "no-std"]
+categories = ["embedded", "no-std", "asynchronous"]
+
+[dependencies]
+embassy-executor = "0.9.1"
+embassy-futures = "0.1.2"
+embassy-sync = "0.7.2"
+embassy-time = "0.5.0"
+heapless = "0.9.2"
+miniroute-macro = { path = "../miniroute-macro", version = "0.1.0" }
+
+defmt = { version = "1.0.1", optional = true }
+
+[features]
+default = []
+defmt = ["dep:defmt"]

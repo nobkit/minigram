@@ -1,0 +1,18 @@
+[package]
+name = "miniroute-macro"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85.0"
+license = "MIT OR Apache-2.0"
+description = "Proc macros for miniroute"
+repository = "https://github.com/user/miniroute"
+keywords = ["embedded", "embassy", "routing", "macro"]
+categories = ["embedded", "no-std"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full", "extra-traits"] }

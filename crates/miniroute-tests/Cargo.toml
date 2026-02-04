@@ -1,0 +1,12 @@
+[package]
+name = "miniroute-tests"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+miniroute = { path = "../miniroute" }
+embassy-executor = { version = "0.9.1", features = ["arch-std", "executor-thread"] }
+embassy-time = { version = "0.5.0", features = ["mock-driver"] }
+embassy-futures = "0.1.2"
+critical-section = { version = "1.2", features = ["std"] }
