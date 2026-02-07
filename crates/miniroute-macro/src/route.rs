@@ -81,7 +81,6 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
 
     let enum_name = &input.ident;
     let enum_name_lower = format_ident!("__{}_main", enum_name.to_string().to_lowercase());
-    let builder_name = format_ident!("{}Builder", enum_name);
     let vis = &input.vis;
     let router = &args.router;
 
@@ -192,7 +191,7 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
                 self as u16
             }
 
-            pub const ROUTE: #router = #router::#enum_name;
+            pub const ROUTE: #router = <Self as ::miniroute::__private::RouteOf<#router>>::VARIANT;
 
             fn lifecycle() -> &'static ::miniroute::__private::Watch<
                 ::miniroute::__private::CriticalSectionRawMutex,
@@ -235,21 +234,18 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
                 Self::navigate_request().signal(destination);
             }
 
-            pub fn task<W: AsyncFnMut() -> ()>(self, work: W) -> #builder_name<W> {
-                #builder_name {
-                    variant: self,
-                    work,
-                    setup: ::miniroute::__private::Noop,
-                    cleanup: ::miniroute::__private::Noop,
-                }
+            pub fn task<W: AsyncFnMut() -> ()>(self, work: W) -> ::miniroute::__private::TaskBuilder<Self, W> {
+                ::miniroute::__private::TaskBuilder::new(self, work)
             }
 
             pub fn spawn_tasks(spawner: &::miniroute::__private::Spawner) {
                 spawner.spawn(#enum_name_lower()).unwrap();
                 #(#spawn_calls)*
             }
+        }
 
-            async fn run<T, S, C>(variant: Self, mut work: T, mut setup: S, mut cleanup: C)
+        impl ::miniroute::__private::TaskRunner for #enum_name {
+            async fn run_task<T, S, C>(self, mut work: T, mut setup: S, mut cleanup: C)
             where
                 T: AsyncFnMut() -> (),
                 S: ::miniroute::__private::Callback,
@@ -283,44 +279,8 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
 
                     cleanup.call().await;
 
-                    ack_tx.send(variant).await;
+                    ack_tx.send(self).await;
                 }
-            }
-        }
-
-        #vis struct #builder_name<W, S = ::miniroute::__private::Noop, C = ::miniroute::__private::Noop> {
-            variant: #enum_name,
-            work: W,
-            setup: S,
-            cleanup: C,
-        }
-
-        impl<W, S, C> #builder_name<W, S, C>
-        where
-            W: AsyncFnMut() -> (),
-            S: ::miniroute::__private::Callback,
-            C: ::miniroute::__private::Callback,
-        {
-            pub fn setup<S2: AsyncFnMut() -> ()>(self, setup: S2) -> #builder_name<W, S2, C> {
-                #builder_name {
-                    variant: self.variant,
-                    work: self.work,
-                    setup,
-                    cleanup: self.cleanup,
-                }
-            }
-
-            pub fn cleanup<C2: AsyncFnMut() -> ()>(self, cleanup: C2) -> #builder_name<W, S, C2> {
-                #builder_name {
-                    variant: self.variant,
-                    work: self.work,
-                    setup: self.setup,
-                    cleanup,
-                }
-            }
-
-            pub async fn run(self) {
-                #enum_name::run(self.variant, self.work, self.setup, self.cleanup).await
             }
         }
 

@@ -8,6 +8,13 @@ pub enum RouteCommand {
     Stop,
 }
 
+/// Maps a Route enum to its variant in a Router enum.
+///
+/// Generated automatically by `#[router]` for each `#[to(RouteType)]` variant.
+pub trait RouteOf<Router> {
+    const VARIANT: Router;
+}
+
 /// Trait for route lifecycle hooks.
 ///
 /// Use the `hooks` flag in `#[route(...)]` to opt-in to a custom implementation.
@@ -17,6 +24,19 @@ pub trait RouteHooks {
     async fn setup() {}
     /// Called after all tasks have acknowledged Stop.
     async fn cleanup() {}
+}
+
+/// Trait implemented by route enums to run their task lifecycle.
+///
+/// Generated automatically by `#[route]`. Bridges the route-specific
+/// lifecycle/ack channels into the generic [`TaskBuilder`].
+#[allow(async_fn_in_trait)]
+pub trait TaskRunner: Copy {
+    async fn run_task<W, S, C>(self, work: W, setup: S, cleanup: C)
+    where
+        W: AsyncFnMut() -> (),
+        S: Callback,
+        C: Callback;
 }
 
 /// Trait for optional async callbacks in the task builder.
@@ -41,6 +61,55 @@ impl<F: AsyncFnMut() -> ()> Callback for F {
     }
 }
 
+/// Builder for configuring a route task with optional setup/cleanup callbacks.
+pub struct TaskBuilder<R, W, S = Noop, C = Noop> {
+    variant: R,
+    work: W,
+    setup: S,
+    cleanup: C,
+}
+
+impl<R: TaskRunner, W: AsyncFnMut() -> ()> TaskBuilder<R, W, Noop, Noop> {
+    pub fn new(variant: R, work: W) -> Self {
+        Self {
+            variant,
+            work,
+            setup: Noop,
+            cleanup: Noop,
+        }
+    }
+}
+
+impl<R, W, S, C> TaskBuilder<R, W, S, C>
+where
+    R: TaskRunner,
+    W: AsyncFnMut() -> (),
+    S: Callback,
+    C: Callback,
+{
+    pub fn setup<S2: AsyncFnMut() -> ()>(self, setup: S2) -> TaskBuilder<R, W, S2, C> {
+        TaskBuilder {
+            variant: self.variant,
+            work: self.work,
+            setup,
+            cleanup: self.cleanup,
+        }
+    }
+
+    pub fn cleanup<C2: AsyncFnMut() -> ()>(self, cleanup: C2) -> TaskBuilder<R, W, S, C2> {
+        TaskBuilder {
+            variant: self.variant,
+            work: self.work,
+            setup: self.setup,
+            cleanup,
+        }
+    }
+
+    pub async fn run(self) {
+        self.variant.run_task(self.work, self.setup, self.cleanup).await
+    }
+}
+
 pub use miniroute_macro::{route, router};
 
 #[doc(hidden)]
@@ -56,7 +125,7 @@ pub mod __private {
     pub use embassy_time::{Duration, WithTimeout};
     pub use heapless::Vec;
 
-    pub use crate::{Callback, Noop, RouteCommand, RouteHooks};
+    pub use crate::{Callback, Noop, RouteCommand, RouteHooks, RouteOf, TaskBuilder, TaskRunner};
 
     #[cfg(feature = "defmt")]
     pub use defmt;

@@ -3,6 +3,7 @@ use quote::quote;
 use syn::{Attribute, Data, DeriveInput, Error, Fields, Ident, Result, Variant, parse2};
 
 struct RouteVariant {
+    variant_ident: Ident,
     route_type: Ident,
 }
 
@@ -10,7 +11,10 @@ fn parse_to_attr(variant: &Variant) -> Result<Option<RouteVariant>> {
     for attr in &variant.attrs {
         if attr.path().is_ident("to") {
             let route_type: Ident = attr.parse_args()?;
-            return Ok(Some(RouteVariant { route_type }));
+            return Ok(Some(RouteVariant {
+                variant_ident: variant.ident.clone(),
+                route_type,
+            }));
         }
     }
     Ok(None)
@@ -89,6 +93,19 @@ fn router_impl_inner(item: TokenStream) -> Result<TokenStream> {
         })
         .collect();
 
+    let route_of_impls: Vec<_> = route_variants
+        .iter()
+        .map(|rv| {
+            let route_type = &rv.route_type;
+            let variant_ident = &rv.variant_ident;
+            quote! {
+                impl ::miniroute::__private::RouteOf<#enum_name> for #route_type {
+                    const VARIANT: #enum_name = #enum_name::#variant_ident;
+                }
+            }
+        })
+        .collect();
+
     let variant_defmt_entries: Vec<_> = data_enum
         .variants
         .iter()
@@ -137,6 +154,8 @@ fn router_impl_inner(item: TokenStream) -> Result<TokenStream> {
         }
 
         ::miniroute::__private::impl_defmt_format!(#enum_name { #(#variant_defmt_entries),* });
+
+        #(#route_of_impls)*
     };
 
     Ok(output)
