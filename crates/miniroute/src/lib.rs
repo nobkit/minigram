@@ -106,7 +106,9 @@ where
     }
 
     pub async fn run(self) {
-        self.variant.run_task(self.work, self.setup, self.cleanup).await
+        self.variant
+            .run_task(self.work, self.setup, self.cleanup)
+            .await
     }
 }
 

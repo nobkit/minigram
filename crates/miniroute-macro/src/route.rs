@@ -231,6 +231,10 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
             }
 
             pub fn navigate(&self, destination: #router) {
+                if Self::navigate_request().signaled() {
+                    // TODO: log dropped navigation attempts in debug mode
+                    return;
+                }
                 Self::navigate_request().signal(destination);
             }
 
@@ -265,6 +269,11 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
                     setup.call().await;
 
                     loop {
+                        if Self::lifecycle().try_get()
+                            == ::core::option::Option::Some(::miniroute::__private::RouteCommand::Stop)
+                        {
+                            break;
+                        }
                         match ::miniroute::__private::select(
                             lifecycle_rx.get_and(|&command| command == ::miniroute::__private::RouteCommand::Stop),
                             work(),
@@ -290,7 +299,6 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
 
         #[embassy_executor::task]
         async fn #enum_name_lower() {
-            use ::miniroute::__private::WaitResult::*;
             use ::miniroute::__private::WithTimeout;
 
             let lifecycle = #enum_name::lifecycle();
@@ -300,50 +308,43 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
             let ack_rx = ack.receiver();
 
             let router = #router::router();
-            let mut router_rx = router.subscriber().unwrap();
-            let router_tx = router.immediate_publisher();
+            let mut router_rx = router.receiver().unwrap();
 
             loop {
-                match router_rx.next_message().await {
-                    Message(r) if r == #enum_name::ROUTE => {
-                        <#enum_name as ::miniroute::__private::RouteHooks>::setup().await;
-                        lifecycle_tx.send(::miniroute::__private::RouteCommand::Start);
+                router_rx.get_and(|&r| r == #enum_name::ROUTE).await;
 
-                        let deferred_destination = #enum_name::navigate_request().wait().await;
+                <#enum_name as ::miniroute::__private::RouteHooks>::setup().await;
+                lifecycle_tx.send(::miniroute::__private::RouteCommand::Start);
 
-                        let mut remaining: ::miniroute::__private::Vec<#enum_name, #variant_count> =
-                            ::miniroute::__private::Vec::from_array([#(#variant_idents),*]);
+                let deferred_destination = #enum_name::navigate_request().wait().await;
 
-                        lifecycle_tx.send(::miniroute::__private::RouteCommand::Stop);
+                let mut remaining: ::miniroute::__private::Vec<#enum_name, #variant_count> =
+                    ::miniroute::__private::Vec::from_array([#(#variant_idents),*]);
 
-                        while !remaining.is_empty() {
-                            match ack_rx.receive()
-                                .with_timeout(::miniroute::__private::Duration::from_secs(1))
-                                .await
-                            {
-                                Ok(id) => {
-                                    if let Some(pos) = remaining.iter().position(|&t| t == id) {
-                                        remaining.swap_remove(pos);
-                                    } else {
-                                        ::miniroute::__private::log_unknown_task_ack();
-                                    }
-                                }
-                                Err(_) => {
-                                    ::miniroute::__private::log_tasks_timeout();
-                                    break;
-                                }
+                lifecycle_tx.send(::miniroute::__private::RouteCommand::Stop);
+
+                while !remaining.is_empty() {
+                    match ack_rx.receive()
+                        .with_timeout(::miniroute::__private::Duration::from_secs(1))
+                        .await
+                    {
+                        Ok(id) => {
+                            if let Some(pos) = remaining.iter().position(|&t| t == id) {
+                                remaining.swap_remove(pos);
+                            } else {
+                                ::miniroute::__private::log_unknown_task_ack();
                             }
                         }
-
-                        #enum_name::navigate_request().reset();
-                        <#enum_name as ::miniroute::__private::RouteHooks>::cleanup().await;
-                        router_tx.publish_immediate(deferred_destination);
-                    }
-                    Message(_) => {}
-                    Lagged(lagged) => {
-                        ::miniroute::__private::log_router_lagged(lagged as u64);
+                        Err(_) => {
+                            ::miniroute::__private::log_tasks_timeout();
+                            break;
+                        }
                     }
                 }
+
+                #enum_name::navigate_request().reset();
+                <#enum_name as ::miniroute::__private::RouteHooks>::cleanup().await;
+                router.sender().send(deferred_destination);
             }
         }
     };

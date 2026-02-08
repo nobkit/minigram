@@ -124,21 +124,17 @@ fn router_impl_inner(item: TokenStream) -> Result<TokenStream> {
         }
 
         impl #enum_name {
-            /// The global router channel for inter-route navigation.
-            fn router() -> &'static ::miniroute::__private::PubSubChannel<
+            /// The global router watch for inter-route navigation.
+            fn router() -> &'static ::miniroute::__private::Watch<
                 ::miniroute::__private::CriticalSectionRawMutex,
                 #enum_name,
                 #variant_count,
-                #variant_count,
-                #variant_count,
             > {
-                static INNER: ::miniroute::__private::PubSubChannel<
+                static INNER: ::miniroute::__private::Watch<
                     ::miniroute::__private::CriticalSectionRawMutex,
                     #enum_name,
                     #variant_count,
-                    #variant_count,
-                    #variant_count,
-                > = ::miniroute::__private::PubSubChannel::new();
+                > = ::miniroute::__private::Watch::new();
                 &INNER
             }
 
@@ -149,7 +145,7 @@ fn router_impl_inner(item: TokenStream) -> Result<TokenStream> {
 
             /// Activate the initial route. Call after `spawn_routes()`.
             pub fn start(initial: #enum_name) {
-                Self::router().immediate_publisher().publish_immediate(initial);
+                Self::router().sender().send(initial);
             }
         }
 
