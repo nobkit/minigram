@@ -21,3 +21,7 @@ target/
 #.idea/
 
 .moon/cache
+
+# SDL dependencies for the embedded-graphics-simulator crate
+SDL2.dll
+SDL2.lib
