@@ -1,4 +1,4 @@
-use defmt::info;
+use defmt::{info, println};
 use embassy_sync::{
     blocking_mutex::raw::{CriticalSectionRawMutex, NoopRawMutex},
     channel::{Channel, TryReceiveError},
@@ -51,12 +51,19 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
     {
         info!("Scale calibration loaded from flash: {}", &factor);
         load_sensor.set_scale(factor);
+    } else {
+        info!("Scale calibration not found. Defaulting to 1.0");
+        load_sensor.set_scale(1.0);
     }
     drop(store);
 
     let load_sensor_mutex = LOAD_CELL.init(Mutex::new(load_sensor));
 
     if let Some(mut running) = LOAD_CELL_RUNNING.receiver() {
+        let mut buffer = [0f32; 5];
+        let mut index = 0usize;
+        let mut filled = false;
+
         loop {
             running.get_and(|n| *n).await;
 
@@ -64,10 +71,14 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
                 Ok(LoadCellCommand::Tare) => {
                     let mut load = load_sensor_mutex.lock().await;
                     load.tare(32);
+                    buffer = [0f32; 5];
+                    index = 0;
+                    filled = false;
                 }
                 Ok(LoadCellCommand::Calibrate) => {
                     let mut load = load_sensor_mutex.lock().await;
                     let mut store = STORE.get().await.lock().await;
+                    load.set_scale(1.0);
                     if let Ok(weight) = load.read_scaled() {
                         WEIGHT.signal(weight as f64);
                         let scale = 100000.0 / weight;
@@ -83,12 +94,24 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
                             }
                         }
                         load.set_scale(scale);
+                        buffer = [0f32; 5];
+                        index = 0;
+                        filled = false;
                     }
                 }
                 Err(TryReceiveError::Empty) => {
                     let mut load = load_sensor_mutex.lock().await;
                     if let Ok(weight) = load.read_scaled() {
-                        WEIGHT.signal(weight as f64);
+                        buffer[index] = weight;
+                        index = (index + 1) % 5;
+                        if index == 0 {
+                            filled = true;
+                        }
+
+                        let count = if filled { 5 } else { index.max(1) };
+                        let smoothed = buffer[..count].iter().sum::<f32>() / count as f32;
+                        info!("{}", smoothed);
+                        WEIGHT.signal(smoothed as f64);
                     }
                 }
             };

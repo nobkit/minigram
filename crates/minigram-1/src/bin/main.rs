@@ -8,7 +8,7 @@
 
 use defmt::info;
 use embassy_executor::Spawner;
-use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
+use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex, once_lock::OnceLock};
 
 use esp_hal::{
     clock::CpuClock,
@@ -21,10 +21,10 @@ use esp_hal::{
 use esp_storage::FlashStorage;
 use loadcell::hx711::HX711;
 use minigram_1::{
-    display::initialize_displays,
+    display::{Display, display, initialize_displays},
     input::{LEFT_BUTTON_CHANNEL, RIGHT_BUTTON_CHANNEL, handle_button, handle_gestures},
     load_cell::load_cell,
-    routes::{ROUTE, RouteName, main_menu::main_menu_route, scale::scale_route},
+    routes::Route,
     storage::init_storage,
 };
 use panic_rtt_target as _;
@@ -66,7 +66,9 @@ async fn main(spawner: Spawner) {
 
     let i2c_bus = I2C_BUS.init(Mutex::new(i2c));
 
-    let (_display_left, _display_right) = initialize_displays(i2c_bus).await;
+    let displays = initialize_displays(i2c_bus).await;
+
+    spawner.spawn(display(displays)).unwrap();
 
     spawner
         .spawn(handle_button(
@@ -83,15 +85,13 @@ async fn main(spawner: Spawner) {
 
     spawner.spawn(handle_gestures()).unwrap();
 
-    ROUTE.sender().send(RouteName::MainMenu);
-
-    spawner.spawn(main_menu_route()).unwrap();
-    spawner.spawn(scale_route()).unwrap();
-
     spawner
         .spawn(load_cell(
             peripherals.GPIO10.degrade(),
             peripherals.GPIO9.degrade(),
         ))
         .unwrap();
+
+    Route::spawn_routes(&spawner);
+    Route::start(Route::Scale);
 }
