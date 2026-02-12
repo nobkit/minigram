@@ -28,7 +28,7 @@ fn main() -> Result<(), core::convert::Infallible> {
     {
         let mut right =
             display.cropped(&Rectangle::new(Point::new(128 + 17, 0), Size::new(128, 64)));
-        draw_timer(&mut right, 124u64, true);
+        draw_timer(&mut right, 124u64);
     }
 
     let output_settings = OutputSettingsBuilder::new()

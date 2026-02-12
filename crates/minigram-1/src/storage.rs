@@ -47,7 +47,7 @@ pub static STORE: OnceLock<
 pub fn init_storage(flash: FlashStorage<'static>) {
     let flash = embassy_embedded_hal::adapter::BlockingAsync::new(flash);
 
-    let mut storage: MapStorage<
+    let storage: MapStorage<
         StoreKey,
         embassy_embedded_hal::adapter::BlockingAsync<FlashStorage<'_>>,
         KeyPointerCache<3, StoreKey, 8>,

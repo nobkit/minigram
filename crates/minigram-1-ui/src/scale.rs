@@ -10,17 +10,11 @@ use heapless::{String, format};
 use crate::text::{TEXT_L, TEXT_S};
 use crate::{DeviceDisplay, icons::PAUSE};
 
-pub fn draw_timer(display: &mut impl DeviceDisplay, seconds: u64, paused: bool) {
-    Rectangle::new(Point::new(0, 0), Size::new(128, 44))
+pub fn draw_timer(display: &mut impl DeviceDisplay, seconds: u64) {
+    Rectangle::new(Point::new(0, 0), Size::new(103, 44))
         .into_styled(PrimitiveStyle::with_fill(BinaryColor::Off))
         .draw(display)
         .unwrap();
-
-    if paused {
-        Image::new(&PAUSE, Point::new(103, 19))
-            .draw(display)
-            .unwrap();
-    }
 
     Text::with_text_style(
         (format!("{:02}", seconds / 60).unwrap() as String<2>).as_str(),
@@ -69,6 +63,18 @@ pub fn draw_timer(display: &mut impl DeviceDisplay, seconds: u64, paused: bool) 
     )
     .draw(display)
     .unwrap();
+}
+
+pub fn draw_paused(display: &mut impl DeviceDisplay, paused: bool) {
+    if paused {
+        Image::new(&PAUSE, Point::new(103, 19))
+            .draw(display)
+            .unwrap();
+    } else {
+        Rectangle::new(Point::new(103, 19), Size::new(22, 22))
+            .draw_styled(&PrimitiveStyle::with_fill(BinaryColor::Off), display)
+            .unwrap();
+    }
 }
 
 pub fn draw_scale(display: &mut impl DeviceDisplay, weight: u64) {

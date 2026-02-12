@@ -1,27 +1,16 @@
-use defmt::info;
 use embassy_embedded_hal::shared_bus::asynch::i2c::I2cDevice;
 use embassy_sync::{
     blocking_mutex::raw::{CriticalSectionRawMutex, NoopRawMutex},
-    lazy_lock::LazyLock,
+    channel::Channel,
     mutex::Mutex,
-    signal::Signal,
-};
-use embedded_graphics::{
-    geometry::AnchorPoint,
-    mono_font::{MonoTextStyleBuilder, ascii::*},
-    pixelcolor::BinaryColor,
-    prelude::*,
-    text::{Alignment, Baseline, Text, TextStyleBuilder},
 };
 use esp_hal::{Async, i2c::master::I2c};
-use minigram_1_ui::scale::{draw_scale, draw_timer};
+use minigram_1_ui::{
+    main_menu::draw_main_menu,
+    scale::{draw_paused, draw_scale, draw_timer},
+};
 use ssd1306::{I2CDisplayInterface, Ssd1306Async, mode::BufferedGraphicsModeAsync, prelude::*};
 use static_cell::StaticCell;
-use tinybmp::Bmp;
-use u8g2_fonts::{
-    U8g2TextStyle,
-    fonts::{u8g2_font_logisoso16_tf, u8g2_font_logisoso38_tf},
-};
 
 pub type Display<'a> = Ssd1306Async<
     I2CInterface<
@@ -78,23 +67,40 @@ pub async fn initialize_displays(
 
 pub enum DisplayCommand {
     Scale { weight: u64 },
-    Timer { time: u64, paused: bool },
+    Timer { time: u64 },
+    Paused { paused: bool },
+    MainMenu,
+    Clear { left: bool, right: bool },
 }
 
-pub static DISPLAY_CMD: Signal<CriticalSectionRawMutex, DisplayCommand> = Signal::new();
+pub static DISPLAY_CMD: Channel<CriticalSectionRawMutex, DisplayCommand, 16> = Channel::new();
 
 #[embassy_executor::task]
 pub async fn display(displays: Displays) {
-    let (mut left, mut right) = displays;
+    let (left, right) = displays;
     loop {
         let mut l = left.lock().await;
         let mut r = right.lock().await;
-        match DISPLAY_CMD.wait().await {
+        match DISPLAY_CMD.receive().await {
             DisplayCommand::Scale { weight } => {
                 draw_scale(&mut *l, weight);
             }
-            DisplayCommand::Timer { time, paused } => {
-                draw_timer(&mut *r, time, paused);
+            DisplayCommand::Paused { paused } => {
+                draw_paused(&mut *r, paused);
+            }
+            DisplayCommand::Timer { time } => {
+                draw_timer(&mut *r, time);
+            }
+            DisplayCommand::MainMenu => {
+                draw_main_menu(&mut *l);
+            }
+            DisplayCommand::Clear { left, right } => {
+                if left {
+                    l.clear_buffer();
+                }
+                if right {
+                    r.clear_buffer();
+                }
             }
         }
         l.flush().await.unwrap();

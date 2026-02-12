@@ -8,7 +8,7 @@
 
 use defmt::info;
 use embassy_executor::Spawner;
-use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex, once_lock::OnceLock};
+use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
 
 use esp_hal::{
     clock::CpuClock,
@@ -21,7 +21,7 @@ use esp_hal::{
 use esp_storage::FlashStorage;
 use loadcell::hx711::HX711;
 use minigram_1::{
-    display::{Display, display, initialize_displays},
+    display::{display, initialize_displays},
     input::{LEFT_BUTTON_CHANNEL, RIGHT_BUTTON_CHANNEL, handle_button, handle_gestures},
     load_cell::load_cell,
     routes::Route,
@@ -36,7 +36,7 @@ esp_bootloader_esp_idf::esp_app_desc!();
 
 static I2C_BUS: StaticCell<Mutex<NoopRawMutex, I2c<esp_hal::Async>>> = StaticCell::new();
 
-static LOAD_CELL: StaticCell<Mutex<NoopRawMutex, HX711<Output<'static>, Input<'static>, Delay>>> =
+static _LOAD_CELL: StaticCell<Mutex<NoopRawMutex, HX711<Output<'static>, Input<'static>, Delay>>> =
     StaticCell::new();
 
 #[esp_rtos::main]

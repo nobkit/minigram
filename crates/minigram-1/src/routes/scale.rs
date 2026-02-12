@@ -11,14 +11,29 @@ use embassy_time::{Duration, Instant, Timer};
 use miniroute::{RouteHooks, route};
 use portable_atomic::AtomicU64;
 
-#[route(router = Route)]
+#[route(router = Route, hooks)]
 pub enum ScaleRoute {
     #[task(handle_input)]
     HandleInput,
     #[task(timer)]
     Timer,
-    #[task(logger)]
-    Logger,
+    #[task(draw_timer)]
+    DrawTimer,
+    #[task(draw_weight)]
+    DrawScale,
+    #[task(draw_paused)]
+    DrawPaused,
+}
+
+impl RouteHooks for ScaleRoute {
+    async fn cleanup() {
+        DISPLAY_CMD
+            .send(DisplayCommand::Clear {
+                left: true,
+                right: true,
+            })
+            .await;
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -29,6 +44,7 @@ enum TimerCmd {
 
 static TIMER_CMD: Signal<CriticalSectionRawMutex, TimerCmd> = Signal::new();
 static SECONDS_ELAPSED: Watch<CriticalSectionRawMutex, u64, 2> = Watch::new();
+static RUNNING: Signal<CriticalSectionRawMutex, bool> = Signal::new();
 
 #[embassy_executor::task]
 async fn handle_input(route: ScaleRoute) {
@@ -42,6 +58,9 @@ async fn handle_input(route: ScaleRoute) {
             }
             InputEvent::Right(ButtonEvent::Hold) => {
                 TIMER_CMD.signal(TimerCmd::Reset);
+            }
+            InputEvent::Both(ButtonEvent::Click) => {
+                route.navigate(Route::MainMenu);
             }
             _ => {}
         })
@@ -68,9 +87,13 @@ async fn timer(route: ScaleRoute) {
                         tx.send(new_e);
                     }
                     Either::Second(cmd) => match cmd {
-                        TimerCmd::Toggle => running.store(false, Ordering::Relaxed),
+                        TimerCmd::Toggle => {
+                            running.store(false, Ordering::SeqCst);
+                            RUNNING.signal(false);
+                        }
                         TimerCmd::Reset => {
-                            running.store(false, Ordering::Relaxed);
+                            running.store(false, Ordering::SeqCst);
+                            RUNNING.signal(false);
                             elapsed.store(0, Ordering::Relaxed);
                             tx.send(0);
                         }
@@ -79,7 +102,8 @@ async fn timer(route: ScaleRoute) {
             } else {
                 match TIMER_CMD.wait().await {
                     TimerCmd::Toggle => {
-                        running.store(true, Ordering::Relaxed);
+                        running.store(true, Ordering::SeqCst);
+                        RUNNING.signal(true);
                         let e = elapsed.load(Ordering::Relaxed);
                         anchor = Instant::now() - Duration::from_secs(e);
                     }
@@ -92,12 +116,14 @@ async fn timer(route: ScaleRoute) {
         })
         .setup(async || {
             elapsed.store(0, Ordering::Relaxed);
-            running.store(false, Ordering::Relaxed);
+            running.store(false, Ordering::SeqCst);
+            RUNNING.signal(false);
             TIMER_CMD.reset();
             tx.send(0);
         })
         .cleanup(async || {
-            running.store(false, Ordering::Relaxed);
+            running.store(false, Ordering::SeqCst);
+            RUNNING.signal(false);
             TIMER_CMD.reset();
         })
         .run()
@@ -105,17 +131,47 @@ async fn timer(route: ScaleRoute) {
 }
 
 #[embassy_executor::task]
-async fn logger(route: ScaleRoute) {
+async fn draw_timer(route: ScaleRoute) {
     let mut rx = SECONDS_ELAPSED.receiver().unwrap();
     route
         .task(async || {
             let secs = rx.changed().await;
             // draw_timer();
             // info!("{}", secs);
-            DISPLAY_CMD.signal(DisplayCommand::Timer {
-                time: secs,
-                paused: false,
-            })
+            DISPLAY_CMD.send(DisplayCommand::Timer { time: secs }).await;
+        })
+        .setup(async || {
+            DISPLAY_CMD.send(DisplayCommand::Timer { time: 0 }).await;
+            DISPLAY_CMD
+                .send(DisplayCommand::Paused { paused: true })
+                .await;
+        })
+        .run()
+        .await;
+}
+
+#[embassy_executor::task]
+async fn draw_weight(route: ScaleRoute) {
+    route
+        .task(async || {})
+        .setup(async || {
+            DISPLAY_CMD
+                .send(DisplayCommand::Scale { weight: 22222u64 })
+                .await
+        })
+        .run()
+        .await;
+}
+
+#[embassy_executor::task]
+async fn draw_paused(route: ScaleRoute) {
+    route
+        .task(async || {
+            DISPLAY_CMD
+                .send(DisplayCommand::Paused {
+                    paused: !RUNNING.wait().await,
+                })
+                .await;
         })
         .run()
         .await;

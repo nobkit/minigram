@@ -1,4 +1,4 @@
-use defmt::{info, println};
+use defmt::info;
 use embassy_sync::{
     blocking_mutex::raw::{CriticalSectionRawMutex, NoopRawMutex},
     channel::{Channel, TryReceiveError},
