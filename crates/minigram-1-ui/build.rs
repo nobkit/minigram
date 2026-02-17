@@ -27,7 +27,8 @@ fn main() {
 
             for Pixel(pos, color) in bmp.pixels() {
                 if color == BinaryColor::On {
-                    let idx = (pos.y as usize) * row_bytes + (pos.x as usize) / 8;
+                    let flipped_y = (height - 1 - pos.y as u32) as usize;
+                    let idx = flipped_y * row_bytes + (pos.x as usize) / 8;
                     let bit = 7 - (pos.x as u32 % 8);
                     raw[idx] |= 1 << bit;
                 }
