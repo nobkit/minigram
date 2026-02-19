@@ -534,6 +534,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-graphics-colorcast"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8e64d1f00fa82120b6af7573eca3bf6c129fb38dee964311e55c465cccb67e0"
+dependencies = [
+ "embedded-graphics",
+]
+
+[[package]]
 name = "embedded-graphics-core"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -617,6 +626,15 @@ checksum = "2564b9f813c544241430e147d8bc454815ef9ac998878d30cc3055449f7fd4c0"
 dependencies = [
  "defmt 1.0.1",
  "embedded-io 0.7.1",
+]
+
+[[package]]
+name = "embedded-mogeefont"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be35c74f8aef6e39e191e9296de12e3fb4ab210d95011ce1aeb56556690fb632"
+dependencies = [
+ "embedded-graphics",
 ]
 
 [[package]]
@@ -1469,7 +1487,9 @@ version = "0.1.0"
 dependencies = [
  "defmt 1.0.1",
  "embedded-graphics",
+ "embedded-graphics-colorcast",
  "embedded-graphics-simulator",
+ "embedded-mogeefont",
  "embedded-text",
  "heapless 0.9.2",
  "tinybmp",

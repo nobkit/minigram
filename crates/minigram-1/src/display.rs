@@ -6,7 +6,7 @@ use embassy_sync::{
 };
 use esp_hal::{Async, i2c::master::I2c};
 use minigram_1_ui::{
-    main_menu::draw_main_menu,
+    main_menu::{draw_main_menu_l, draw_main_menu_r},
     scale::{draw_paused, draw_scale, draw_timer},
 };
 use ssd1306::{I2CDisplayInterface, Ssd1306Async, mode::BufferedGraphicsModeAsync, prelude::*};
@@ -69,7 +69,7 @@ pub enum DisplayCommand {
     Scale { weight: u64 },
     Timer { time: u64 },
     Paused { paused: bool },
-    MainMenu,
+    MainMenu { selected: u32 },
     Clear { left: bool, right: bool },
 }
 
@@ -91,8 +91,9 @@ pub async fn display(displays: Displays) {
             DisplayCommand::Timer { time } => {
                 draw_timer(&mut *r, time);
             }
-            DisplayCommand::MainMenu => {
-                draw_main_menu(&mut *l);
+            DisplayCommand::MainMenu { selected } => {
+                draw_main_menu_l(&mut *l, selected);
+                draw_main_menu_r(&mut *r, selected);
             }
             DisplayCommand::Clear { left, right } => {
                 if left {

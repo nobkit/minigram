@@ -7,13 +7,19 @@ edition = "2024"
 name = "scale"
 required-features = ["simulator"]
 
+[[bin]]
+name = "main_menu"
+required-features = ["simulator"]
+
 [dependencies]
 embedded-graphics = "0.8.1"
 embedded-graphics-simulator = { version = "0.8.0", optional = true }
 embedded-text = "0.7.3"
 u8g2-fonts = { version = "0.7.2", features = ["embedded_graphics_textstyle"] }
+embedded-mogeefont = "0.1.0"
 defmt = { version = "1.0.1", optional = true }
 heapless = "0.9.2"
+embedded-graphics-colorcast = "0.1.1"
 
 [build-dependencies]
 embedded-graphics = "0.8.1"

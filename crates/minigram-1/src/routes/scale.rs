@@ -59,7 +59,7 @@ async fn handle_input(route: ScaleRoute) {
             InputEvent::Right(ButtonEvent::Hold) => {
                 TIMER_CMD.signal(TimerCmd::Reset);
             }
-            InputEvent::Both(ButtonEvent::Click) => {
+            InputEvent::Both(ButtonEvent::Hold) => {
                 route.navigate(Route::MainMenu);
             }
             _ => {}
