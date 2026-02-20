@@ -1,3 +1,8 @@
 [workspace]
-resolver="3"
-members=["crates/minigram-1", "crates/minigram-1-ui", "crates/miniroute", "crates/miniroute-macro", "crates/miniroute-tests"]
+resolver = "3"
+members = [
+    "crates/minigram-1-ui",
+    "crates/miniroute",
+    "crates/miniroute-macro",
+    "crates/miniroute-tests",
+]

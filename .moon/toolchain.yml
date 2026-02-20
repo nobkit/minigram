@@ -1,5 +1,0 @@
-rust:
-  bins:
-    - bin: 'esp-generate'
-      local: true
-    - 'probe-rs-tools@0.30.0'

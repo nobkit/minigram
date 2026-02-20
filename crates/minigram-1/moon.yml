@@ -1,9 +1,11 @@
-$schema: 'https://moonrepo.dev/schemas/project.json'
-
-layer: 'application'
-
+$schema: https://moonrepo.dev/schemas/project.json
+layer: application
 tasks:
   run:
-    command: 'cargo run --release'
+    command: cargo run --release
+    options:
+      cache: false
+  check:
+    command: cargo +nightly clippy --quiet --target=riscv32imc-unknown-none-elf --message-format=json-diagnostic-rendered-ansi
     options:
       cache: false

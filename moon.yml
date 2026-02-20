@@ -1,0 +1,6 @@
+$schema: https://moonrepo.dev/schemas/project.json
+tasks:
+  check:
+    command: cargo clippy --quiet --workspace --message-format=json-diagnostic-rendered-ansi
+    options:
+      cache: false

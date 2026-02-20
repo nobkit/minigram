@@ -1,6 +1,14 @@
 {
-  "rust-analyzer.cargo.allTargets": false,
-  "rust-analyzer.cargo.target": "riscv32imc-unknown-none-elf",
+  "rust-analyzer.linkedProjects": [
+    "Cargo.toml",
+    "crates/minigram-1/Cargo.toml"
+  ],
+  "rust-analyzer.check.overrideCommand": [
+    "moon",
+    "run",
+    "--quiet",
+    "~:check"
+  ],
   "conventionalCommits.scopes": [
     "miniroute"
   ],

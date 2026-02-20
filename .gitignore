@@ -3,7 +3,6 @@ debug/
 target/
 
 # Editor configuration
-.zed/
 .helix/
 .nvim.lua
 

@@ -1,2 +1,7 @@
 projects:
-  minigram-1: 'crates/minigram-1'
+  root: "."
+  minigram-1: "crates/minigram-1"
+  minigram-1-ui: "crates/minigram-1-ui"
+  miniroute: "crates/miniroute"
+  miniroute-macro: "crates/miniroute-macro"
+  miniroute-tests: "crates/miniroute-tests"
