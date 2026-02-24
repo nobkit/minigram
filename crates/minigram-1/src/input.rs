@@ -45,14 +45,16 @@ pub async fn handle_button(
         button.wait_for_low().await;
 
         Timer::after_millis(20).await;
-        match button.wait_for_high().with_timeout(HOLD_TIMEOUT).await {
-            Err(_) => {
-                sender.send(ButtonEvent::Hold).await;
+        if button
+            .wait_for_high()
+            .with_timeout(HOLD_TIMEOUT)
+            .await
+            .is_err()
+        {
+            sender.send(ButtonEvent::Hold).await;
 
-                button.wait_for_high().await;
-                continue;
-            }
-            _ => (),
+            button.wait_for_high().await;
+            continue;
         }
 
         Timer::after_millis(20).await;
@@ -107,7 +109,7 @@ pub async fn handle_gestures() {
                 ButtonId::Left => {
                     INPUT_CHANNEL.send(InputEvent::Left(button_event)).await;
                     info!("{}", InputEvent::Left(button_event));
-                    if let Some(other_button_event) = result.ok() {
+                    if let Ok(other_button_event) = result {
                         INPUT_CHANNEL
                             .send(InputEvent::Right(other_button_event))
                             .await;
@@ -117,7 +119,7 @@ pub async fn handle_gestures() {
                 ButtonId::Right => {
                     INPUT_CHANNEL.send(InputEvent::Right(button_event)).await;
                     info!("{}", InputEvent::Right(button_event));
-                    if let Some(other_button_event) = result.ok() {
+                    if let Ok(other_button_event) = result {
                         INPUT_CHANNEL
                             .send(InputEvent::Left(other_button_event))
                             .await;

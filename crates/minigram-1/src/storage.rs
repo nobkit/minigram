@@ -1,5 +1,6 @@
 use core::panic;
 
+use embassy_embedded_hal::adapter::BlockingAsync;
 use embassy_sync::{
     blocking_mutex::raw::CriticalSectionRawMutex, mutex::Mutex, once_lock::OnceLock,
 };
@@ -33,32 +34,21 @@ impl Key for StoreKey {
     }
 }
 
-pub static STORE: OnceLock<
-    Mutex<
-        CriticalSectionRawMutex,
-        MapStorage<
-            StoreKey,
-            embassy_embedded_hal::adapter::BlockingAsync<FlashStorage<'_>>,
-            KeyPointerCache<3, StoreKey, 8>,
-        >,
-    >,
-> = OnceLock::new();
+pub type Store<'a> =
+    MapStorage<StoreKey, BlockingAsync<FlashStorage<'a>>, KeyPointerCache<3, StoreKey, 8>>;
+
+pub static STORE: OnceLock<Mutex<CriticalSectionRawMutex, Store<'_>>> = OnceLock::new();
 
 pub fn init_storage(flash: FlashStorage<'static>) {
-    let flash = embassy_embedded_hal::adapter::BlockingAsync::new(flash);
+    let flash = BlockingAsync::new(flash);
 
-    let storage: MapStorage<
-        StoreKey,
-        embassy_embedded_hal::adapter::BlockingAsync<FlashStorage<'_>>,
-        KeyPointerCache<3, StoreKey, 8>,
-    > = MapStorage::new(
+    let storage: Store = MapStorage::new(
         flash,
         MapConfig::new(0x9000..0xC000),
         KeyPointerCache::<3, StoreKey, 8>::new(),
     );
 
-    match STORE.init(Mutex::new(storage)) {
-        Err(_) => panic!("Failed to initialize flash storage."),
-        _ => {}
+    if STORE.init(Mutex::new(storage)).is_err() {
+        panic!("Failed to initialize flash storage.")
     }
 }

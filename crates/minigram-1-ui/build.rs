@@ -22,7 +22,7 @@ fn main() {
             let width = bmp.size().width;
             let height = bmp.size().height;
 
-            let row_bytes = ((width + 7) / 8) as usize;
+            let row_bytes = width.div_ceil(8) as usize;
             let mut raw = vec![0u8; row_bytes * height as usize];
 
             for Pixel(pos, color) in bmp.pixels() {
