@@ -60,7 +60,7 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
     let load_sensor_mutex = LOAD_CELL.init(Mutex::new(load_sensor));
 
     if let Some(mut running) = LOAD_CELL_RUNNING.receiver() {
-        let mut buffer = [0f32; 5];
+        let mut buffer = [0f32; 10];
         let mut index = 0usize;
         let mut filled = false;
 
@@ -71,7 +71,7 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
                 Ok(LoadCellCommand::Tare) => {
                     let mut load = load_sensor_mutex.lock().await;
                     load.tare(32);
-                    buffer = [0f32; 5];
+                    buffer = [0f32; 10];
                     index = 0;
                     filled = false;
                 }
@@ -94,7 +94,7 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
                             }
                         }
                         load.set_scale(scale);
-                        buffer = [0f32; 5];
+                        buffer = [0f32; 10];
                         index = 0;
                         filled = false;
                     }
@@ -103,14 +103,12 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
                     let mut load = load_sensor_mutex.lock().await;
                     if let Ok(weight) = load.read_scaled() {
                         buffer[index] = weight;
-                        index = (index + 1) % 5;
+                        index = (index + 1) % 10;
                         if index == 0 {
                             filled = true;
                         }
-
-                        let count = if filled { 5 } else { index.max(1) };
+                        let count = if filled { 10 } else { index.max(1) };
                         let smoothed = buffer[..count].iter().sum::<f32>() / count as f32;
-                        info!("{}", smoothed);
                         WEIGHT.signal(smoothed as f64);
                     }
                 }

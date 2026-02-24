@@ -4,6 +4,7 @@ use embedded_graphics::{pixelcolor::BinaryColor, prelude::DrawTarget};
 pub mod icons;
 pub mod main_menu;
 pub mod scale;
+pub mod settings;
 pub mod text;
 
 pub trait DeviceDisplay: DrawTarget<Color = BinaryColor, Error: core::fmt::Debug> {}

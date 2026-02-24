@@ -78,6 +78,9 @@ pub fn draw_paused(display: &mut impl DeviceDisplay, paused: bool) {
 }
 
 pub fn draw_scale(display: &mut impl DeviceDisplay, weight: u64) {
+    Rectangle::new(Point::new(0, 0), Size::new(128, 46))
+        .draw_styled(&PrimitiveStyle::with_fill(BinaryColor::Off), display)
+        .unwrap();
     Text::with_text_style(
         (format!("{}", weight / 10).unwrap() as String<4>).as_str(),
         Point::new(96, 2),

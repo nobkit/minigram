@@ -67,6 +67,9 @@ async fn handle_input(route: MainMenuRoute) {
                 0 => {
                     route.navigate(Route::Scale);
                 }
+                2 => {
+                    route.navigate(Route::Settings);
+                }
                 _ => {
                     info!("Not yet implemented!");
                 }

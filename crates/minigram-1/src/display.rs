@@ -8,6 +8,7 @@ use esp_hal::{Async, i2c::master::I2c};
 use minigram_1_ui::{
     main_menu::{draw_main_menu_l, draw_main_menu_r},
     scale::{draw_paused, draw_scale, draw_timer},
+    settings::{SettingsOption, draw_settings_l, draw_settings_r},
 };
 use ssd1306::{I2CDisplayInterface, Ssd1306Async, mode::BufferedGraphicsModeAsync, prelude::*};
 use static_cell::StaticCell;
@@ -62,7 +63,7 @@ pub async fn initialize_displays(
     let static_display_right = DISPLAY_RIGHT.init(Mutex::new(display_right));
     let static_display_left = DISPLAY_LEFT.init(Mutex::new(display_left));
 
-    return (static_display_left, static_display_right);
+    (static_display_left, static_display_right)
 }
 
 pub enum DisplayCommand {
@@ -71,6 +72,7 @@ pub enum DisplayCommand {
     Paused { paused: bool },
     MainMenu { selected: u32 },
     Clear { left: bool, right: bool },
+    Settings(SettingsOption),
 }
 
 pub static DISPLAY_CMD: Channel<CriticalSectionRawMutex, DisplayCommand, 16> = Channel::new();
@@ -102,6 +104,10 @@ pub async fn display(displays: Displays) {
                 if right {
                     r.clear_buffer();
                 }
+            }
+            DisplayCommand::Settings(opt) => {
+                draw_settings_l(&mut *l, &opt);
+                draw_settings_r(&mut *r, &opt);
             }
         }
         l.flush().await.unwrap();

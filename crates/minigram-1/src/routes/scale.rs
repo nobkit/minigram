@@ -2,6 +2,7 @@ use super::Route;
 use crate::{
     display::{DISPLAY_CMD, DisplayCommand},
     input::{ButtonEvent, INPUT_CHANNEL, InputEvent},
+    load_cell::{LOAD_CELL_RUNNING, WEIGHT},
 };
 use core::sync::atomic::{AtomicBool, Ordering};
 use defmt::info;
@@ -26,6 +27,10 @@ pub enum ScaleRoute {
 }
 
 impl RouteHooks for ScaleRoute {
+    async fn setup() {
+        LOAD_CELL_RUNNING.sender().send(true);
+    }
+
     async fn cleanup() {
         DISPLAY_CMD
             .send(DisplayCommand::Clear {
@@ -33,6 +38,7 @@ impl RouteHooks for ScaleRoute {
                 right: true,
             })
             .await;
+        LOAD_CELL_RUNNING.sender().send(false);
     }
 }
 
@@ -153,10 +159,12 @@ async fn draw_timer(route: ScaleRoute) {
 #[embassy_executor::task]
 async fn draw_weight(route: ScaleRoute) {
     route
-        .task(async || {})
-        .setup(async || {
+        .task(async || {
+            let weight = WEIGHT.wait().await;
             DISPLAY_CMD
-                .send(DisplayCommand::Scale { weight: 22222u64 })
+                .send(DisplayCommand::Scale {
+                    weight: (weight as u64 / 100),
+                })
                 .await
         })
         .run()
