@@ -39,9 +39,7 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
 
     let mut load_sensor = HX711::new(hx711_sck, hx711_dt, delay);
 
-    Timer::after_millis(2000).await;
-
-    load_sensor.tare(32);
+    load_sensor.tare(8);
 
     let mut data_buffer = [0u8; 64];
     let mut store = STORE.get().await.lock().await;
@@ -70,7 +68,7 @@ pub async fn load_cell(sck: AnyPin<'static>, dt: AnyPin<'static>) {
             match LOAD_CELL_COMMANDS.try_receive() {
                 Ok(LoadCellCommand::Tare) => {
                     let mut load = load_sensor_mutex.lock().await;
-                    load.tare(32);
+                    load.tare(4);
                     buffer = [0f32; 10];
                     index = 0;
                     filled = false;

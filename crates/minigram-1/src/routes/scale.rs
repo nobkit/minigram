@@ -2,10 +2,9 @@ use super::Route;
 use crate::{
     display::{DISPLAY_CMD, DisplayCommand},
     input::{ButtonEvent, INPUT_CHANNEL, InputEvent},
-    load_cell::{LOAD_CELL_RUNNING, WEIGHT},
+    load_cell::{LOAD_CELL_COMMANDS, LOAD_CELL_RUNNING, LoadCellCommand, WEIGHT},
 };
 use core::sync::atomic::{AtomicBool, Ordering};
-use defmt::info;
 use embassy_futures::select::{Either, select};
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal, watch::Watch};
 use embassy_time::{Duration, Instant, Timer};
@@ -57,7 +56,7 @@ async fn handle_input(route: ScaleRoute) {
     route
         .task(async || match INPUT_CHANNEL.receive().await {
             InputEvent::Left(ButtonEvent::Click) => {
-                info!("Current Route: Weighing Menu");
+                LOAD_CELL_COMMANDS.send(LoadCellCommand::Tare).await;
             }
             InputEvent::Right(ButtonEvent::Click) => {
                 TIMER_CMD.signal(TimerCmd::Toggle);
@@ -163,7 +162,7 @@ async fn draw_weight(route: ScaleRoute) {
             let weight = WEIGHT.wait().await;
             DISPLAY_CMD
                 .send(DisplayCommand::Scale {
-                    weight: (weight as u64 / 100),
+                    weight: (weight as i64 / 100),
                 })
                 .await
         })

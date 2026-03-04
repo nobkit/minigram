@@ -67,7 +67,7 @@ pub async fn initialize_displays(
 }
 
 pub enum DisplayCommand {
-    Scale { weight: u64 },
+    Scale { weight: i64 },
     Timer { time: u64 },
     Paused { paused: bool },
     MainMenu { selected: u32 },

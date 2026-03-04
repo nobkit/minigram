@@ -77,12 +77,12 @@ pub fn draw_paused(display: &mut impl DeviceDisplay, paused: bool) {
     }
 }
 
-pub fn draw_scale(display: &mut impl DeviceDisplay, weight: u64) {
+pub fn draw_scale(display: &mut impl DeviceDisplay, weight: i64) {
     Rectangle::new(Point::new(0, 0), Size::new(128, 46))
         .draw_styled(&PrimitiveStyle::with_fill(BinaryColor::Off), display)
         .unwrap();
     Text::with_text_style(
-        (format!("{}", weight / 10).unwrap() as String<4>).as_str(),
+        (format!("{}", weight / 10).unwrap() as String<5>).as_str(),
         Point::new(96, 2),
         &TEXT_L,
         TextStyleBuilder::new()
@@ -106,7 +106,7 @@ pub fn draw_scale(display: &mut impl DeviceDisplay, weight: u64) {
     .unwrap();
 
     Text::with_text_style(
-        (format!("{}", weight % 10).unwrap() as String<1>).as_str(),
+        (format!("{}", weight.abs() % 10).unwrap() as String<1>).as_str(),
         Point::new(103, 2),
         &TEXT_L,
         TextStyleBuilder::new()
