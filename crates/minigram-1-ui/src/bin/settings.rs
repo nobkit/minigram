@@ -7,7 +7,9 @@ use embedded_graphics_simulator::{
     BinaryColorTheme, OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
     sdl2::Keycode,
 };
-use minigram_1_ui::settings::{CalibrationState, SettingsOption, draw_settings_l, draw_settings_r};
+use minigram_1_ui::settings::{
+    CalibrationState, SettingsOption, WiFiState, draw_settings_l, draw_settings_r,
+};
 
 fn draw(display: &mut SimulatorDisplay<BinaryColor>, opt: SettingsOption) {
     display.clear(BinaryColor::Off).unwrap();
@@ -55,7 +57,7 @@ fn main() -> Result<(), core::convert::Infallible> {
                         _ => 0,
                     };
                     if delta != 0 {
-                        item = (item + delta).rem_euclid(4);
+                        item = (item + delta).rem_euclid(9);
                         draw(&mut display, make_opt(item));
                     }
                 }
@@ -72,7 +74,12 @@ fn make_opt(item: i32) -> SettingsOption {
         0 => SettingsOption::Calibration(CalibrationState::Browse),
         1 => SettingsOption::Calibration(CalibrationState::Waiting),
         2 => SettingsOption::Calibration(CalibrationState::Complete),
-        3 => SettingsOption::DeviceInfo,
+        3 => SettingsOption::WiFi(WiFiState::Browse),
+        4 => SettingsOption::WiFi(WiFiState::WaitForPairing),
+        5 => SettingsOption::WiFi(WiFiState::Pairing),
+        6 => SettingsOption::WiFi(WiFiState::Paired),
+        7 => SettingsOption::WiFi(WiFiState::Connecting),
+        8 => SettingsOption::WiFi(WiFiState::Connected),
         _ => SettingsOption::Calibration(CalibrationState::Browse),
     }
 }
