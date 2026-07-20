@@ -68,29 +68,16 @@ async fn main(spawner: Spawner) {
 
     let displays = initialize_displays(i2c_bus).await;
 
-    spawner.spawn(display(displays)).unwrap();
+    spawner.spawn(display(displays).unwrap());
 
     spawner
-        .spawn(handle_button(
-            peripherals.GPIO8.degrade(),
-            RIGHT_BUTTON_CHANNEL.sender(),
-        ))
-        .unwrap();
+        .spawn(handle_button(peripherals.GPIO8.degrade(), RIGHT_BUTTON_CHANNEL.sender()).unwrap());
     spawner
-        .spawn(handle_button(
-            peripherals.GPIO20.degrade(),
-            LEFT_BUTTON_CHANNEL.sender(),
-        ))
-        .unwrap();
+        .spawn(handle_button(peripherals.GPIO20.degrade(), LEFT_BUTTON_CHANNEL.sender()).unwrap());
 
-    spawner.spawn(handle_gestures()).unwrap();
+    spawner.spawn(handle_gestures().unwrap());
 
-    spawner
-        .spawn(load_cell(
-            peripherals.GPIO10.degrade(),
-            peripherals.GPIO9.degrade(),
-        ))
-        .unwrap();
+    spawner.spawn(load_cell(peripherals.GPIO10.degrade(), peripherals.GPIO9.degrade()).unwrap());
 
     Route::spawn_routes(&spawner);
     Route::start(Route::Scale);

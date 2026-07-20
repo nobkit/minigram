@@ -11,9 +11,9 @@ keywords = ["embedded", "embassy", "routing", "async", "no-std"]
 categories = ["embedded", "no-std", "asynchronous"]
 
 [dependencies]
-embassy-executor = "0.9.1"
+embassy-executor = "0.10.0"
 embassy-futures = "0.1.2"
-embassy-sync = "0.7.2"
+embassy-sync = "0.8.0"
 embassy-time = "0.5.0"
 heapless = "0.9.2"
 miniroute-macro = { path = "../miniroute-macro", version = "0.1.0" }

@@ -6,11 +6,14 @@ use embassy_sync::{
 };
 use esp_storage::FlashStorage;
 use sequential_storage::{
-    cache::KeyPointerCache,
+    cache::{
+        Cache, key_pointers::ArrayKeyPointers, page_pointers::ArrayPagePointers,
+        page_states::ArrayPageStates,
+    },
     map::{Key, MapConfig, MapStorage, SerializationError},
 };
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum StoreKey {
     ScaleCalibrationFactor = 1,
@@ -34,8 +37,11 @@ impl Key for StoreKey {
     }
 }
 
-pub type Store<'a> =
-    MapStorage<StoreKey, BlockingAsync<FlashStorage<'a>>, KeyPointerCache<3, StoreKey, 8>>;
+pub type Store<'a> = MapStorage<
+    StoreKey,
+    BlockingAsync<FlashStorage<'a>>,
+    Cache<ArrayPageStates<3>, ArrayPagePointers<3>, ArrayKeyPointers<StoreKey, 8>, StoreKey>,
+>;
 
 pub static STORE: OnceLock<Mutex<CriticalSectionRawMutex, Store<'_>>> = OnceLock::new();
 
@@ -45,7 +51,11 @@ pub fn init_storage(flash: FlashStorage<'static>) {
     let storage: Store = MapStorage::new(
         flash,
         MapConfig::new(0x9000..0xC000),
-        KeyPointerCache::<3, StoreKey, 8>::new(),
+        Cache::new(
+            ArrayPageStates::<3>::new(),
+            ArrayPagePointers::<3>::new(),
+            ArrayKeyPointers::<StoreKey, 8>::new(),
+        ),
     );
 
     if STORE.init(Mutex::new(storage)).is_err() {

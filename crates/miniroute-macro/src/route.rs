@@ -143,7 +143,7 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
         .map(|task| {
             let task_fn = &task.task_fn;
             let variant = &task.variant;
-            quote! { spawner.spawn(#task_fn(#enum_name::#variant)).unwrap(); }
+            quote! { spawner.spawn(#task_fn(#enum_name::#variant).unwrap()); }
         })
         .collect();
 
@@ -243,7 +243,7 @@ fn route_impl_inner(attr: TokenStream, item: TokenStream) -> Result<TokenStream>
             }
 
             pub fn spawn_tasks(spawner: &::miniroute::__private::Spawner) {
-                spawner.spawn(#enum_name_lower()).unwrap();
+                spawner.spawn(#enum_name_lower().unwrap());
                 #(#spawn_calls)*
             }
         }

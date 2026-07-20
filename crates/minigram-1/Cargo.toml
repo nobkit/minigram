@@ -17,9 +17,9 @@ name = "hello_test"
 test = false
 
 [dependencies]
-esp-hal = { version = "1.0.0", features = ["defmt", "esp32c3", "unstable"] }
+esp-hal = { version = "~1.1.0", features = ["defmt", "esp32c3", "unstable"] }
 
-esp-rtos = { version = "0.2.0", features = [
+esp-rtos = { version = "0.3.0", features = [
   "defmt",
   "embassy",
   "esp-alloc",
@@ -28,7 +28,7 @@ esp-rtos = { version = "0.2.0", features = [
 ] }
 
 defmt = "1.0.1"
-esp-bootloader-esp-idf = { version = "0.4.0", features = ["defmt", "esp32c3"] }
+esp-bootloader-esp-idf = { version = "0.5.0", features = ["defmt", "esp32c3"] }
 
 embassy-net = { version = "0.7.1", features = [
   "defmt",
@@ -40,28 +40,27 @@ embassy-net = { version = "0.7.1", features = [
 embedded-io = { version = "0.7.1", features = ["defmt"] }
 embedded-io-async = { version = "0.7.0", features = ["defmt"] }
 embedded-storage = { version = "0.3.1" }
-sequential-storage = { version = "7.0.1", features = ["defmt"] }
-esp-alloc = { version = "0.9.0", features = ["defmt"] }
+sequential-storage = { version = "8.0.1", features = ["defmt"] }
+esp-alloc = { version = "0.10.0", features = ["defmt"] }
 panic-rtt-target = { version = "0.2.0", features = ["defmt"] }
 rtt-target = { version = "0.6.2", features = ["defmt"] }
 # for more networking protocol support see https://crates.io/crates/edge-net
 bt-hci = "0.6.0"
-embassy-executor = { version = "0.9.1", features = ["defmt"] }
+embassy-executor = { version = "0.10.0", features = ["defmt"] }
 embassy-time = { version = "0.5.0", features = ["defmt"] }
 embassy-sync = { version = "0.7.2", features = ["defmt"] }
 embassy-embedded-hal = { version = "0.5.0" }
 embassy-futures = { version = "0.1.2" }
-esp-radio = { version = "0.17.0", features = [
+esp-radio = { version = "0.18.0", features = [
   "ble",
   "coex",
   "defmt",
   "esp-alloc",
   "esp32c3",
-  "smoltcp",
   "unstable",
   "wifi",
 ] }
-smoltcp = { version = "0.12.0", default-features = false, features = [
+smoltcp = { version = "0.13.0", default-features = false, features = [
   "defmt",
   "medium-ethernet",
   "multicast",
@@ -74,7 +73,7 @@ smoltcp = { version = "0.12.0", default-features = false, features = [
   "socket-tcp",
   "socket-udp",
 ] }
-trouble-host = { version = "0.5.0", features = ["gatt"] }
+trouble-host = { version = "0.6.0", features = ["gatt"] }
 embedded-graphics = "0.8.1"
 embedded-text = "0.7.3"
 ssd1306 = { version = "0.10.0", features = ["async", "graphics"] }
@@ -83,7 +82,7 @@ static_cell = { version = "2.1.1", features = ["nightly"] }
 loadcell = "0.3.0"
 esp-storage = { version = "0.8.1", features = ["esp32c3", "defmt"] }
 u8g2-fonts = { version = "0.7.2", features = ["embedded_graphics_textstyle"] }
-heapless = { version = "0.9.2", features = ["defmt", "ufmt"] }
+heapless = { version = "0.9.3", features = ["defmt", "ufmt"] }
 ufmt = "0.2.0"
 tinybmp = "0.7.0"
 portable-atomic = "1"
