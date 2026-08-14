@@ -9,6 +9,7 @@ use minigram_1_ui::{
     main_menu::{draw_main_menu_l, draw_main_menu_r},
     scale::{draw_paused, draw_scale, draw_timer},
     settings::{SettingsOption, draw_settings_l, draw_settings_r},
+    settings_menu::{draw_settings_menu_l, draw_settings_menu_r},
 };
 use ssd1306::{I2CDisplayInterface, Ssd1306Async, mode::BufferedGraphicsModeAsync, prelude::*};
 use static_cell::StaticCell;
@@ -71,6 +72,7 @@ pub enum DisplayCommand {
     Timer { time: u64 },
     Paused { paused: bool },
     MainMenu { selected: u32 },
+    SettingsMenu { selected: u32 },
     Clear { left: bool, right: bool },
     Settings(SettingsOption),
 }
@@ -96,6 +98,10 @@ pub async fn display(displays: Displays) {
             DisplayCommand::MainMenu { selected } => {
                 draw_main_menu_l(&mut *l, selected);
                 draw_main_menu_r(&mut *r, selected);
+            }
+            DisplayCommand::SettingsMenu { selected } => {
+                draw_settings_menu_l(&mut *l, selected);
+                draw_settings_menu_r(&mut *r, selected);
             }
             DisplayCommand::Clear { left, right } => {
                 if left {

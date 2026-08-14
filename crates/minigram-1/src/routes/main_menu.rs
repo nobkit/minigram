@@ -42,7 +42,7 @@ async fn handle_input(route: MainMenuRoute) {
             InputEvent::Right(ButtonEvent::Click) => {
                 SELECTED_ITEM
                     .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |value: i32| {
-                        Option::Some((value + 1).rem_euclid(4))
+                        Option::Some((value + 1).rem_euclid(3))
                     })
                     .unwrap();
                 DISPLAY_CMD
@@ -54,7 +54,7 @@ async fn handle_input(route: MainMenuRoute) {
             InputEvent::Left(ButtonEvent::Click) => {
                 SELECTED_ITEM
                     .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |value| {
-                        Option::Some((value - 1).rem_euclid(4))
+                        Option::Some((value - 1).rem_euclid(3))
                     })
                     .unwrap();
                 DISPLAY_CMD

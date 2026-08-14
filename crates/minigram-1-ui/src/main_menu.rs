@@ -126,37 +126,4 @@ pub fn draw_main_menu_r(display: &mut impl DeviceDisplay, item: u32) {
             .draw(display)
             .unwrap();
     }
-
-    if item == 3 {
-        draw_highlight(display, RIGHT_ORIGIN);
-        Text::with_text_style(
-            "Updates",
-            Point::new(86, 54),
-            TEXT_XS!(BinaryColor::Off),
-            TextStyleBuilder::new()
-                .alignment(Alignment::Left)
-                .baseline(Baseline::Top)
-                .build(),
-        )
-        .draw(display)
-        .unwrap();
-        CastImage::new(&BOX52X52, Point::new(74, 2), BinaryColor::Off)
-            .draw(display)
-            .unwrap();
-    } else {
-        Text::with_text_style(
-            "Updates",
-            Point::new(86, 54),
-            TEXT_XS!(),
-            TextStyleBuilder::new()
-                .alignment(Alignment::Left)
-                .baseline(Baseline::Top)
-                .build(),
-        )
-        .draw(display)
-        .unwrap();
-        Image::new(&BOX52X52, Point::new(74, 2))
-            .draw(display)
-            .unwrap();
-    }
 }

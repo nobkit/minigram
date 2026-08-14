@@ -15,6 +15,10 @@ required-features = ["simulator"]
 name = "settings"
 required-features = ["simulator"]
 
+[[bin]]
+name = "settings_menu"
+required-features = ["simulator"]
+
 [dependencies]
 embedded-graphics = "0.8.1"
 embedded-graphics-simulator = { version = "0.8.0", optional = true }

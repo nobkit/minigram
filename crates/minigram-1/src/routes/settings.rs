@@ -1,6 +1,6 @@
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal, watch::Watch};
 use embassy_time::Timer;
-use minigram_1_ui::settings::{CalibrationState, SettingsOption};
+use minigram_1_ui::settings::{CalibrationState, SettingsOption, WiFiState};
 use miniroute::{RouteHooks, route};
 
 use crate::{
@@ -46,6 +46,9 @@ fn next_state(current: &SettingsOption) -> Option<SettingsOption> {
         SettingsOption::Calibration(CalibrationState::Browse) => {
             Some(SettingsOption::Calibration(CalibrationState::Waiting))
         }
+        SettingsOption::WiFi(WiFiState::Browse) => {
+            Some(SettingsOption::WiFi(WiFiState::WaitForPairing))
+        }
         _ => None,
     }
 }
@@ -55,12 +58,27 @@ fn back_state(current: &SettingsOption) -> Option<SettingsOption> {
         SettingsOption::Calibration(CalibrationState::Waiting) => {
             Some(SettingsOption::Calibration(CalibrationState::Browse))
         }
+        SettingsOption::WiFi(_) => Some(SettingsOption::WiFi(WiFiState::Browse)),
         _ => None,
     }
 }
 
+fn is_browsing(current: &SettingsOption) -> bool {
+    match current {
+        SettingsOption::Calibration(CalibrationState::Browse) => true,
+        SettingsOption::WiFi(WiFiState::Browse) => true,
+        _ => false,
+    }
+}
+
+pub static SETTINGS_OPTIONS: [SettingsOption; 2] = [
+    SettingsOption::Calibration(CalibrationState::Browse),
+    SettingsOption::WiFi(WiFiState::Browse),
+];
+
 #[embassy_executor::task]
 async fn handle_input(route: Settings) {
+    let mut settings_index: u8 = 0;
     route
         .task(async || match INPUT_CHANNEL.receive().await {
             InputEvent::Both(ButtonEvent::Click) => {
@@ -90,6 +108,28 @@ async fn handle_input(route: Settings) {
                     COMPLETED.signal(());
                 }
             }
+            InputEvent::Left(ButtonEvent::Click) => {
+                let current = SETTINGS_STATE.try_get().unwrap();
+                if !is_browsing(&current) {
+                    return;
+                }
+                let len = SETTINGS_OPTIONS.len() as u8;
+                settings_index = (settings_index + len - 1) % len;
+                SETTINGS_STATE
+                    .sender()
+                    .send(SETTINGS_OPTIONS[settings_index as usize]);
+            }
+            InputEvent::Right(ButtonEvent::Click) => {
+                let current = SETTINGS_STATE.try_get().unwrap();
+                if !is_browsing(&current) {
+                    return;
+                }
+                let len = SETTINGS_OPTIONS.len() as u8;
+                settings_index = (settings_index + 1) % len;
+                SETTINGS_STATE
+                    .sender()
+                    .send(SETTINGS_OPTIONS[settings_index as usize]);
+            }
             _ => {}
         })
         .run()
@@ -102,6 +142,12 @@ async fn draw(route: Settings) {
     route
         .task(async || {
             let opt = rx.changed().await;
+            DISPLAY_CMD
+                .send(DisplayCommand::Clear {
+                    left: true,
+                    right: true,
+                })
+                .await;
             DISPLAY_CMD.send(DisplayCommand::Settings(opt)).await;
         })
         .run()
@@ -116,12 +162,6 @@ async fn completed_timeout(route: Settings) {
         .task(async || {
             COMPLETED.wait().await;
             Timer::after_millis(1000).await;
-            DISPLAY_CMD
-                .send(DisplayCommand::Clear {
-                    left: false,
-                    right: true,
-                })
-                .await;
             SETTINGS_STATE
                 .sender()
                 .send(SettingsOption::Calibration(CalibrationState::Browse));

@@ -7,6 +7,7 @@ use embedded_graphics_simulator::{
     BinaryColorTheme, OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
     sdl2::Keycode,
 };
+use heapless::String;
 use minigram_1_ui::settings::{
     CalibrationState, SettingsOption, WiFiState, draw_settings_l, draw_settings_r,
 };
@@ -57,7 +58,7 @@ fn main() -> Result<(), core::convert::Infallible> {
                         _ => 0,
                     };
                     if delta != 0 {
-                        item = (item + delta).rem_euclid(9);
+                        item = (item + delta).rem_euclid(SCREEN_COUNT);
                         draw(&mut display, make_opt(item));
                     }
                 }
@@ -69,17 +70,17 @@ fn main() -> Result<(), core::convert::Infallible> {
     Ok(())
 }
 
+/// Screens the simulator can cycle through. No `Update` screens exist yet, so
+/// none are listed here.
+const SCREEN_COUNT: i32 = 4;
+
 fn make_opt(item: i32) -> SettingsOption {
+    let ssid = String::<32>::try_from("TP-Link_AD08").unwrap();
+
     match item {
-        0 => SettingsOption::Calibration(CalibrationState::Browse),
-        1 => SettingsOption::Calibration(CalibrationState::Waiting),
-        2 => SettingsOption::Calibration(CalibrationState::Complete),
-        3 => SettingsOption::WiFi(WiFiState::Browse),
-        4 => SettingsOption::WiFi(WiFiState::WaitForPairing),
-        5 => SettingsOption::WiFi(WiFiState::Pairing),
-        6 => SettingsOption::WiFi(WiFiState::Paired),
-        7 => SettingsOption::WiFi(WiFiState::Connecting),
-        8 => SettingsOption::WiFi(WiFiState::Connected),
-        _ => SettingsOption::Calibration(CalibrationState::Browse),
+        1 => SettingsOption::Calibration(CalibrationState::Complete),
+        2 => SettingsOption::WiFi(WiFiState::NotConnected),
+        3 => SettingsOption::WiFi(WiFiState::Connected(ssid)),
+        _ => SettingsOption::Calibration(CalibrationState::Waiting),
     }
 }
