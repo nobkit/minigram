@@ -65,17 +65,18 @@ async fn handle_input(route: SettingsMenuRoute) {
             }
             InputEvent::Both(ButtonEvent::Click) => match SELECTED_ITEM.load(Ordering::SeqCst) {
                 0 => {
-                    // route.navigate(Route::WiFi);
-                    todo!();
+                    route.navigate(Route::WiFi);
                 }
-                2 => {
-                    // route.navigate(Route::Calibration);
-                    todo!();
+                1 => {
+                    route.navigate(Route::Calibration);
                 }
                 _ => {
                     info!("Not yet implemented!");
                 }
             },
+            InputEvent::Both(ButtonEvent::DoubleClick) => {
+                route.navigate(Route::MainMenu);
+            }
             _ => {}
         })
         .run()
