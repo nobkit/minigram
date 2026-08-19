@@ -30,8 +30,8 @@ impl Key for StoreKey {
     fn deserialize_from(buffer: &[u8]) -> Result<(Self, usize), SerializationError> {
         match buffer[0] {
             1 => Ok((StoreKey::ScaleCalibrationFactor, 1)),
-            2 => Ok((StoreKey::WifiSSID, 2)),
-            3 => Ok((StoreKey::WifiPassword, 3)),
+            2 => Ok((StoreKey::WifiSSID, 1)),
+            3 => Ok((StoreKey::WifiPassword, 1)),
             _ => Err(SerializationError::InvalidFormat),
         }
     }

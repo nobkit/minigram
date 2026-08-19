@@ -72,7 +72,7 @@ fn main() -> Result<(), core::convert::Infallible> {
 
 /// Screens the simulator can cycle through. No `Update` screens exist yet, so
 /// none are listed here.
-const SCREEN_COUNT: i32 = 4;
+const SCREEN_COUNT: i32 = 5;
 
 fn make_opt(item: i32) -> SettingsOption {
     let ssid = String::<32>::try_from("TP-Link_AD08").unwrap();
@@ -81,6 +81,7 @@ fn make_opt(item: i32) -> SettingsOption {
         1 => SettingsOption::Calibration(CalibrationState::Complete),
         2 => SettingsOption::WiFi(WiFiState::NotConnected),
         3 => SettingsOption::WiFi(WiFiState::Connected(ssid)),
+        4 => SettingsOption::WiFi(WiFiState::Pairing(482913)),
         _ => SettingsOption::Calibration(CalibrationState::Waiting),
     }
 }

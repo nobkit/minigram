@@ -15,12 +15,14 @@ use esp_hal::{
     delay::Delay,
     gpio::{Input, Output, Pin},
     i2c::{self, master::I2c},
+    rng::TrngSource,
     time::Rate,
     timer::timg::TimerGroup,
 };
 use esp_storage::FlashStorage;
 use loadcell::hx711::HX711;
 use minigram_1::{
+    ble::ble,
     display::{display, initialize_displays},
     input::{LEFT_BUTTON_CHANNEL, RIGHT_BUTTON_CHANNEL, handle_button, handle_gestures},
     load_cell::load_cell,
@@ -39,6 +41,10 @@ static I2C_BUS: StaticCell<Mutex<NoopRawMutex, I2c<esp_hal::Async>>> = StaticCel
 static _LOAD_CELL: StaticCell<Mutex<NoopRawMutex, HX711<Output<'static>, Input<'static>, Delay>>> =
     StaticCell::new();
 
+/// Kept alive for the lifetime of the program: dropping it would take the
+/// entropy source away from the BLE security manager.
+static TRNG_SOURCE: StaticCell<TrngSource<'static>> = StaticCell::new();
+
 #[esp_rtos::main]
 async fn main(spawner: Spawner) {
     rtt_target::rtt_init_defmt!();
@@ -52,6 +58,11 @@ async fn main(spawner: Spawner) {
     esp_rtos::start(timg0.timer0, sw_interrupt.software_interrupt0);
 
     info!("Embassy initialized!");
+
+    // The radio stack allocates, and the BLE security manager needs entropy it
+    // can trust, so both have to be up before any radio peripheral is claimed.
+    esp_alloc::heap_allocator!(size: 72 * 1024);
+    TRNG_SOURCE.init(TrngSource::new(peripherals.RNG, peripherals.ADC1));
 
     init_storage(FlashStorage::new(peripherals.FLASH));
 
@@ -78,6 +89,8 @@ async fn main(spawner: Spawner) {
     spawner.spawn(handle_gestures().unwrap());
 
     spawner.spawn(load_cell(peripherals.GPIO10.degrade(), peripherals.GPIO9.degrade()).unwrap());
+
+    spawner.spawn(ble(peripherals.BT).unwrap());
 
     Route::spawn_routes(&spawner);
     Route::start(Route::Scale);

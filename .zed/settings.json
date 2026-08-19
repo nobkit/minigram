@@ -6,9 +6,17 @@
   "lsp": {
     "rust-analyzer": {
       "initialization_options": {
-        "linkedProjects": ["Cargo.toml", "crates/minigram-1/Cargo.toml"],
+        "linkedProjects": [
+          "Cargo.toml",
+          "crates/minigram-1/Cargo.toml"
+        ],
         "check": {
-          "overrideCommand": ["moon", "run", "--quiet", "~:check"],
+          "overrideCommand": [
+            "moon",
+            "run",
+            "--quiet",
+            "~:check"
+          ],
         },
       },
     },

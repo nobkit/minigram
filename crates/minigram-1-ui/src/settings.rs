@@ -22,6 +22,8 @@ pub enum CalibrationState {
 pub enum WiFiState {
     Connected(String<32>),
     NotConnected,
+    /// A phone is pairing over BLE and has to be told this pass key.
+    Pairing(u32),
 }
 
 /// The settings screens that currently exist. `Update` has no screens yet, so
@@ -95,7 +97,43 @@ fn draw_wifi_l(display: &mut impl DeviceDisplay) {
     draw_double_press_lr_to_go_back(display);
 }
 
+/// The BLE pass key the phone has to be told, filling the whole screen so it
+/// stays readable from arm's length.
+fn draw_pairing_pass_key(display: &mut impl DeviceDisplay, pass_key: u32) {
+    Text::with_text_style(
+        "Pair code",
+        Point::new(64, 8),
+        TEXT_XS!(),
+        TextStyleBuilder::new()
+            .alignment(Alignment::Center)
+            .baseline(Baseline::Top)
+            .build(),
+    )
+    .draw(display)
+    .unwrap();
+
+    // Bluetooth pass keys are always rendered as six digits, zero padded.
+    let digits: String<6> = format!("{:06}", pass_key % 1_000_000).unwrap();
+
+    Text::with_text_style(
+        &digits,
+        Point::new(64, 24),
+        &TEXT_S,
+        TextStyleBuilder::new()
+            .alignment(Alignment::Center)
+            .baseline(Baseline::Top)
+            .build(),
+    )
+    .draw(display)
+    .unwrap();
+}
+
 fn draw_wifi_r(display: &mut impl DeviceDisplay, state: &WiFiState) {
+    if let WiFiState::Pairing(pass_key) = state {
+        draw_pairing_pass_key(display, *pass_key);
+        return;
+    }
+
     Image::new(&GITHUB_QR58X58, Point::new(67, 3))
         .draw(display)
         .unwrap();
